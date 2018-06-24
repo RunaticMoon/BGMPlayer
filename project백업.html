@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title> 배경음 틀어주는 사이트 </title>
+  <meta name="generator" content="DreamWeaver" />
+  <meta name="author" content="문주호" />
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="Content-Type" Content="text/html; charset=utf-8" />
+</head>
+  <body>
+    <div id="player"></div>
+    
+    <div id="controller">
+    	<button onClick="playVideo()">재생</button>
+        <button onClick="stopVideo()">멈추기</button>
+        <button onClick="pauseVideo()">일시정지</button>
+    </div>
+    <div id="musicName"></div>
+    
+    <div id="playList"></div>
+    
+    <?php
+        $connect = mysql_connect('localhost','incores','20020218');
+        mysql_select_db('incores',$connect);
+        
+        mysql_query("set session character_set_connection=utf8;");
+        mysql_query("set session character_set_results=utf8;");
+        mysql_query("set session character_set_client=utf8;");
+        
+        $result = mysql_query("SELECT * FROM project1", $connect);
+        $num_rows = mysql_num_rows($result);
+        
+        $i = 0;
+        
+        while ($row = mysql_fetch_array($result, MYSQL_NUM)) {
+   		 $id[$i] = $row[1];
+ 	     $name[$i] = $row[2];
+ 	     $i++;  
+		}
+    ?>
+    <script>
+	  var list = new Array("<?= implode(',' , $id); ?>");
+      var name = new Array("<?= implode(',', $name); ?>");
+	  var nlist = list[0].split(',');
+	  var nname = name.split(',');
+	  var len = "<?= $num_rows ?>";
+	  var index = Math.floor(Math.random()*len);
+	  var sound = 50;
+	  var label = document.getElementById("musicName");
+      var tag = document.createElement('script');
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+	  
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '390',
+          width: '640',
+          videoId: nlist[index],
+		  playerVars: {
+             disablekb:'1'
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      }
+
+      function onPlayerReady(event) {
+		event.target.unMute();
+		event.target.setVolume(sound);
+        event.target.playVideo();
+		label.innerHTML = nname[index];
+      }
+
+      var done = false;
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.ENDED) {
+		  index = Math.floor(Math.random()*len);
+          player.loadVideoById(nlist[index], 0, "large");
+		  label.innerHTML = nname[index];
+        }
+      }
+	  function playVideo() {
+		player.playVideo();  
+	  }
+      function stopVideo() {
+		player.seekTo(0, true);
+        player.stopVideo();
+      }
+	  function pauseVideo() {
+		player.pauseVideo();  
+	  }
+	  
+	  var playlist = document.getElementById("playList");
+	  
+    </script>
+  </body>
+</html>

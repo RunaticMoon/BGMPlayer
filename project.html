@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title> 배경음 틀어주는 사이트 </title>
+  <meta name="generator" content="DreamWeaver" />
+  <meta name="author" content="문주호" />
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta http-equiv="Content-Type" Content="text/html; charset=utf-8" />
+  
+  <style>
+  img.rotate {
+	  margin: 10px;
+	  width: 100px;
+	  height: 100px;
+	  border-radius: 50em;
+	  -webkit-transition: all 0.3s ease-in-out;
+	  -moz-transition: all 0.3s ease-in-out; 
+	  -o-transition: all 0.3s ease-in-out; 
+	  -ms-transition: all 0.3s ease-in-out; 
+	  transition: all 0.3s ease-in-out; 
+	  position: relative;
+	  left: -80px;
+	  top: -10px;
+  }
+  img.rotate:hover {
+	  -webkit-transform: rotate(180deg); 
+	  -moz-transform: rotate(180deg); 
+	  -o-transform: rotate(180deg);
+	  -ms-transform: rotate(180deg);
+	  transform: rotate(180deg);
+  } 
+  .textBox {
+	position: relative;
+	left: 15px;  
+  }
+  .container {
+	  width: 600px;
+	  margin: 100px auto;
+  }
+  #musicName {
+	height:30px;
+	width: 300px;
+	background:#00FF93;
+	text-align:center; 
+  }
+  #controller {
+	 margin-left:100px;
+  }
+  </style>
+  <script>
+	if (!Element.prototype.addEventListener) {
+	 Element.prototype.addEventListener = function(event_name, func) {
+	  event_name = "on" + event_name;
+	  this.attachEvent(event_name,func);
+	 }
+	}
+	function isIE() { 
+            var ua = navigator.userAgent 
+                , res = false 
+                , re = null; 
+             
+            // IE 6~10 
+            if (navigator.appName == 'Microsoft Internet Explorer') {
+                re = new RegExp('MSIE ([0-9]{1,}\.[0-9])'); 
+                res = re.test(ua); 
+            } 
+            // later IE 11 
+            else if (navigator.appName == 'Netscape') {
+                re = new RegExp('Trident/([0-9]{1,}\.[0-9]{1})'); 
+                res = re.test(ua); 
+            } 
+            // etc 
+            else { 
+                res = false; 
+            } 
+             
+            return res; 
+        } 
+	</script>
+</head>
+  <body>
+    <!-- user interface -->
+ 	 <div class="container">
+        <div id="musicName"></div>
+         <div id="controller">
+            <img src="img/play.png" onClick="playVideo()" onMouseOver="this.src = 'img/play2.png'" onMouseOut="this.src = 'img/play.png'" width="50" height="50">
+            <img src="img/stop.png" onClick="pauseVideo()" onMouseOver="this.src = 'img/stop2.png'" onMouseOut="this.src = 'img/stop.png'" width="50" height="50">
+        </div>
+        <br /> <br />
+        <div id="playList"></div>
+    </div>
+    <!-- hidden area -->
+    <form method="get" action="trackChange.php" id="trackChange">
+    	<input type="hidden" name="track" id="inputTrack">
+    </form>
+    <div id="player"></div>
+    
+    <?php
+        $connect = mysql_connect('localhost','root','apmsetup');
+        mysql_select_db('bean',$connect);
+        
+        mysql_query("set session character_set_connection=utf8;");
+        mysql_query("set session character_set_results=utf8;");
+        mysql_query("set session character_set_client=utf8;");
+        
+        $result = mysql_query("SELECT * FROM project", $connect);
+        $num_rows = mysql_num_rows($result);
+       
+        $i = 0;
+        while ($row = mysql_fetch_array($result, MYSQL_NUM)) {
+          $id[$i] = $row[1];
+          $name[$i] = $row[2];
+          $i++;  
+       }
+       
+       $menu = mysql_query("SELECT * FROM project", $connect);
+       $menu_num = mysql_num_rows($menu);
+       
+       $i = 0;
+       while ($row = mysql_fetch_array($menu, MYSQL_NUM)) {
+          $tableId[$i] = $row[1];
+          $tableAlt[$i] = $row[2];
+          $i++;  
+       }
+       
+       mysql_close($connect);
+    ?>
+    
+    <script>
+	  var list = new Array("<?= implode(',' , $id); ?>");
+      var name = new Array("<?= implode(',', $name); ?>");
+	  var nlist = list[0].split(',');
+	  if(isIE()) {
+	  	  var nname = name[0].split(',');
+	  }
+	  else {
+		  var nname = name.split(',');
+	  }
+	  var len = "<?= $num_rows ?>";
+	  var index = Math.floor(Math.random()*len);
+	  var sound = 50;
+	  var label = document.getElementById("musicName");
+      var tag = document.createElement('script');
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+	  
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '0',
+          width: '0',
+          videoId: nlist[index],
+		  playerVars: {
+             disablekb:'1'
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      }
+
+      function onPlayerReady(event) {
+		event.target.unMute();
+		event.target.setVolume(sound);
+        event.target.playVideo();
+		label.innerHTML = nname[index];
+      }
+
+      var done = false;
+      function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.ENDED) {
+		  index = Math.floor(Math.random()*len);
+          player.loadVideoById(nlist[index], 0, "large");
+		  label.innerHTML = nname[index];
+        }
+      }
+	  function playVideo() {
+		player.playVideo();  
+	  }
+      function stopVideo() {
+		player.seekTo(0, true);
+        player.stopVideo();
+      }
+	  function pauseVideo() {
+		player.pauseVideo();  
+	  }
+	  
+	  var playlist = document.getElementById("playList");
+	  var changeEvent = document.getElementById("trackChange");
+	  var changeInput = document.getElementById("inputTrack");
+	  
+	  function playTrack(i) {
+		  alert(i);
+		  changeInput.value = i;
+		  changeEvent.submit();
+	  }
+	  
+	  var tbID = new Array("<?= implode(',', $tableId); ?>");
+	  var tbALT = new Array("<?= implode(',', $tableAlt); ?>");
+	  var tableId = tbID[0].split(',');
+	  var tableAlt = tbALT[0].split(',');
+	  
+	  for(var i=0; i < eval("<?= $menu_num ?>"); i++) {
+		  var object = document.createElement('img');
+		  var textbox = document.createElement('span');
+		  var text = document.createTextNode(tableAlt[i]);
+		  textbox.appendChild(text);
+		  textbox.className = "textBox";
+		  playlist.appendChild(textbox);
+		  object.alt = i;
+		  object.src = "./img/"+i+".jpg";
+		  object.className = "rotate";
+		  object.addEventListener('click',function() {
+		  	  changeInput.value = tableId[this.alt];
+			  changeEvent.submit();
+		  });
+		  playlist.appendChild(object);
+		  if(i%2 == 1) {
+			playlist.appendChild(document.createElement('br'));  
+		  }
+  }
+	  
+	  
+
+    </script>
+  </body>
+</html>
